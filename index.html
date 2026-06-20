@@ -91,6 +91,7 @@
     background:var(--surface);color:var(--text-soft)}
   .mini-btn.ok{color:var(--accent);border-color:var(--accent)}
   .mini-btn.del{color:var(--danger);border-color:var(--danger)}
+  .mini-btn.wa{color:#fff;background:#25D366;border-color:#25D366}
 
   .empty{text-align:center;color:var(--text-soft);font-size:13px;padding:30px 10px}
 
@@ -246,10 +247,10 @@ const todayISO = new Date().toISOString().slice(0,10);
 const SEED = {
   theme:'clean',
   appointments:[
-    {id:1, name:'דנה לוי', service:'צבע + פן', date:todayISO, time:'10:30', dur:45, price:320, done:false},
-    {id:2, name:'יעל ברק', service:'תספורת + עיצוב', date:todayISO, time:'12:00', dur:30, price:150, done:false},
-    {id:3, name:'רוני אדם', service:'החלקה', date:todayISO, time:'14:15', dur:90, price:580, done:false},
-    {id:4, name:'נועה גל', service:'גוונים', date:todayISO, time:'16:00', dur:60, price:410, done:false}
+    {id:1, name:'דנה לוי', phone:'0541234567', service:'צבע + פן', date:todayISO, time:'10:30', dur:45, price:320, done:false},
+    {id:2, name:'יעל ברק', phone:'0529876543', service:'תספורת + עיצוב', date:todayISO, time:'12:00', dur:30, price:150, done:false},
+    {id:3, name:'רוני אדם', phone:'', service:'החלקה', date:todayISO, time:'14:15', dur:90, price:580, done:false},
+    {id:4, name:'נועה גל', phone:'0501112233', service:'גוונים', date:todayISO, time:'16:00', dur:60, price:410, done:false}
   ],
   portfolio:[
     {id:1, title:"באלייאז' חום-זהב", cat:'צבע', grad:GRADS[0]},
@@ -331,6 +332,7 @@ function apptCard(a){
     <div class="ci">${ini}</div>
     <div class="info"><b>${a.name}</b><span>${a.service}</span>
       <div class="row-actions">
+        <button class="mini-btn wa" onclick="waReminder('+a.id+')">📱 תזכורת</button>
         ${a.done?'<button class="mini-btn" onclick="toggleDone('+a.id+')">בטל סימון</button>'
                 :'<button class="mini-btn ok" onclick="toggleDone('+a.id+')">✓ הושלם</button>'}
         <button class="mini-btn del" onclick="delAppt('+a.id+')">מחק</button>
@@ -340,10 +342,22 @@ function apptCard(a){
 function toggleDone(id){ const a=S.appointments.find(x=>x.id===id); a.done=!a.done; save(); render(); }
 function delAppt(id){ S.appointments=S.appointments.filter(x=>x.id!==id); save(); render(); toast('התור נמחק'); }
 
+/* ===== וואטסאפ (wa.me — ללא שרת) ===== */
+function waPhone(p){ if(!p) return ''; let d=(''+p).replace(/\D/g,'');
+  if(d.startsWith('972')) return d; if(d.startsWith('0')) d=d.slice(1); return d?'972'+d:''; }
+function waOpen(phone,text){ window.open('https://wa.me/'+(phone||'')+'?text='+encodeURIComponent(text),'_blank'); }
+function waReminder(id){ const a=S.appointments.find(x=>x.id===id);
+  const msg='היי '+a.name+' 👋\nתזכורת לתור שלך ב-STUDIO:\n📅 '+fmtDate(a.date)+'\n🕐 '+a.time+'\n💇 '+a.service+'\n\nנתראה! מאיה';
+  waOpen(waPhone(a.phone), msg);
+  if(!a.phone) toast('בחרו איש קשר בוואטסאפ'); }
+function waReco(){ const lines=RECO[faceSel].map(r=>'• '+r.t+' ('+r.m+'%) — '+r.p).join('\n');
+  waOpen('', 'המלצות סטיילינג לפנים '+faceSel+' ✨\n\n'+lines+'\n\nמאיה — STUDIO'); }
+
 function apptForm(){
   openModal(`
     <h2>תור חדש</h2><div class="sub">מלאו את פרטי הלקוח/ה והשירות</div>
     <div class="field"><label>שם הלקוח/ה</label><input id="f_name" placeholder="לדוגמה: מיכל אבני"></div>
+    <div class="field"><label>טלפון (לתזכורת בוואטסאפ)</label><input id="f_phone" type="tel" placeholder="050-0000000"></div>
     <div class="field"><label>שירות</label>
       <select id="f_service">
         <option>תספורת + עיצוב</option><option>צבע + פן</option><option>גוונים / באלייאז'</option>
@@ -366,6 +380,7 @@ function saveAppt(){
   if(!name){ toast('נא להזין שם לקוח/ה'); return; }
   const date=document.getElementById('f_date').value||todayISO;
   S.appointments.push({ id:nid(S.appointments), name,
+    phone:document.getElementById('f_phone').value.trim(),
     service:document.getElementById('f_service').value, date,
     time:document.getElementById('f_time').value||'10:00',
     dur:+document.getElementById('f_dur').value||45,
@@ -522,7 +537,7 @@ function sendReco(){
   openModal(`
     <h2>שליחת המלצות 💬</h2>
     <div class="sub">בחרו ערוץ לשליחת ${RECO[faceSel].length} ההמלצות לפנים ${faceSel}</div>
-    <button class="btn" onclick="closeModal();toast('✓ נשלח בוואטסאפ')">שליחה בוואטסאפ</button>
+    <button class="btn" onclick="closeModal();waReco()">שליחה בוואטסאפ</button>
     <button class="btn ghost" onclick="closeModal();toast('✓ נשלח באימייל')">שליחה באימייל</button>
     <button class="btn ghost" onclick="closeModal()">ביטול</button>`);
 }
