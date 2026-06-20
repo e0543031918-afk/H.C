@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STUDIO — אפליקציה למעצבי שער</title>
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700;900&family=Assistant:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* ===== ערכת מודרני ונקי (ברירת מחדל) ===== */
+    --bg:#f4f5f7; --surface:#ffffff; --surface-2:#f0f1f4;
+    --text:#16181d; --text-soft:#7c828c; --line:#e7e9ee;
+    --brand:#16181d; --brand-soft:#f0f1f4; --accent:#16181d;
+    --on-brand:#ffffff; --shadow:0 10px 30px rgba(20,22,28,.08);
+    --radius:22px; --font:'Heebo',sans-serif;
+  }
+  [data-theme="vivid"]{
+    --bg:#fbf3ff; --surface:#ffffff; --surface-2:#f7ecff;
+    --text:#2a1340; --text-soft:#9a7bb5; --line:#f0e3fb;
+    --brand:linear-gradient(135deg,#ff5fa2,#a44cff); --brand-soft:#fbe9f5;
+    --accent:#ff4f9a; --on-brand:#ffffff; --shadow:0 14px 36px rgba(164,76,255,.20);
+    --radius:26px;
+  }
+  [data-theme="luxe"]{
+    --bg:#15130f; --surface:#1f1c16; --surface-2:#2a261e;
+    --text:#f3ead7; --text-soft:#b3a489; --line:#352f24;
+    --brand:linear-gradient(135deg,#d9b25a,#b8893a); --brand-soft:#2a2419;
+    --accent:#d9b25a; --on-brand:#15130f; --shadow:0 16px 40px rgba(0,0,0,.5);
+    --radius:18px;
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:var(--font);background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(160,120,255,.06), transparent),
+    #e9ebef;color:#16181d;min-height:100vh;display:flex;flex-direction:column;
+    align-items:center;padding:28px 16px 60px}
+
+  .head{text-align:center;margin-bottom:22px;max-width:760px}
+  .head h1{font-weight:900;font-size:26px;letter-spacing:-.5px}
+  .head p{color:#6b7280;font-size:14px;margin-top:6px}
+
+  /* בורר ערכות */
+  .themes{display:flex;gap:10px;margin:18px 0 26px;flex-wrap:wrap;justify-content:center}
+  .theme-btn{display:flex;align-items:center;gap:9px;background:#fff;border:1.5px solid #e3e6ec;
+    border-radius:40px;padding:9px 16px 9px 12px;cursor:pointer;font-family:var(--font);
+    font-size:13px;font-weight:600;color:#16181d;transition:.2s;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .theme-btn:hover{transform:translateY(-2px)}
+  .theme-btn.on{border-color:#16181d;box-shadow:0 6px 18px rgba(0,0,0,.12)}
+  .swatch{width:26px;height:26px;border-radius:50%;border:2px solid #fff;box-shadow:0 0 0 1px #e3e6ec}
+  .sw-clean{background:linear-gradient(135deg,#16181d,#6b7280)}
+  .sw-vivid{background:linear-gradient(135deg,#ff5fa2,#a44cff)}
+  .sw-luxe{background:linear-gradient(135deg,#d9b25a,#b8893a)}
+
+  /* מסגרת טלפון */
+  .phone{width:390px;max-width:100%;height:780px;background:var(--bg);border-radius:46px;
+    padding:14px;box-shadow:0 30px 70px rgba(20,22,28,.28), 0 0 0 12px #1b1d22, 0 0 0 13px #2c2f36;
+    position:relative;overflow:hidden;transition:background .3s}
+  .notch{position:absolute;top:14px;left:50%;transform:translateX(-50%);width:130px;height:26px;
+    background:#1b1d22;border-radius:0 0 18px 18px;z-index:40}
+  .screen{position:absolute;inset:14px;background:var(--bg);border-radius:36px;overflow:hidden;
+    display:flex;flex-direction:column;transition:background .3s}
+
+  .statusbar{display:flex;justify-content:space-between;padding:14px 26px 6px;font-size:12px;
+    font-weight:700;color:var(--text)}
+
+  .scroll{flex:1;overflow-y:auto;padding:6px 18px 14px;scrollbar-width:none}
+  .scroll::-webkit-scrollbar{display:none}
+
+  /* כותרת עליונה */
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:8px 4px 16px}
+  .topbar .hi{font-size:13px;color:var(--text-soft);font-weight:500}
+  .topbar .name{font-size:21px;font-weight:900;color:var(--text);letter-spacing:-.4px}
+  .avatar{width:46px;height:46px;border-radius:50%;background:var(--brand);display:flex;
+    align-items:center;justify-content:center;color:var(--on-brand);font-weight:900;font-size:17px}
+
+  .page{display:none;animation:fade .35s ease}
+  .page.on{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  .sec-title{font-size:16px;font-weight:800;color:var(--text);margin:18px 4px 12px;
+    display:flex;align-items:center;justify-content:space-between}
+  .sec-title a{font-size:12px;color:var(--accent);font-weight:700;text-decoration:none}
+
+  .card{background:var(--surface);border-radius:var(--radius);box-shadow:var(--shadow);
+    border:1px solid var(--line)}
+
+  /* ===== מסך בית ===== */
+  .stat-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .stat{padding:16px;border-radius:var(--radius)}
+  .stat .v{font-size:24px;font-weight:900;color:var(--text)}
+  .stat .l{font-size:12px;color:var(--text-soft);font-weight:600;margin-top:2px}
+  .stat .chip{display:inline-block;font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;
+    background:var(--brand-soft);color:var(--accent);margin-top:8px}
+
+  .hero{background:var(--brand);color:var(--on-brand);padding:20px;border-radius:var(--radius);
+    margin-bottom:6px;position:relative;overflow:hidden}
+  .hero h3{font-size:13px;font-weight:600;opacity:.85}
+  .hero .big{font-size:30px;font-weight:900;margin:4px 0 10px}
+  .hero .mini{font-size:12px;opacity:.85;display:flex;gap:14px}
+  .hero .deco{position:absolute;left:-30px;bottom:-40px;width:140px;height:140px;border-radius:50%;
+    background:rgba(255,255,255,.12)}
+
+  /* תור */
+  .appt{display:flex;align-items:center;gap:13px;padding:14px;margin-bottom:10px}
+  .appt .time{display:flex;flex-direction:column;align-items:center;min-width:52px}
+  .appt .time b{font-size:16px;font-weight:900;color:var(--text)}
+  .appt .time span{font-size:10px;color:var(--text-soft)}
+  .appt .ci{width:44px;height:44px;border-radius:14px;background:var(--surface-2);display:flex;
+    align-items:center;justify-content:center;font-weight:800;color:var(--accent);font-size:15px}
+  .appt .info{flex:1}
+  .appt .info b{font-size:14px;font-weight:800;color:var(--text);display:block}
+  .appt .info span{font-size:12px;color:var(--text-soft)}
+  .appt .price{font-size:13px;font-weight:900;color:var(--text)}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--accent)}
+
+  /* ===== יומן ===== */
+  .week{display:flex;gap:8px;margin-bottom:14px;overflow-x:auto;padding-bottom:4px}
+  .day{min-width:46px;text-align:center;padding:11px 6px;border-radius:16px;background:var(--surface);
+    border:1px solid var(--line);cursor:pointer;transition:.2s}
+  .day span{font-size:11px;color:var(--text-soft);font-weight:600}
+  .day b{font-size:17px;font-weight:900;color:var(--text);display:block;margin-top:3px}
+  .day.on{background:var(--brand);border-color:transparent}
+  .day.on span,.day.on b{color:var(--on-brand)}
+  .timeline-row{display:flex;gap:12px;margin-bottom:4px}
+  .timeline-row .t{min-width:42px;font-size:11px;color:var(--text-soft);font-weight:700;padding-top:16px}
+  .timeline-row .slot{flex:1;border-top:1px dashed var(--line);min-height:48px;padding:8px 0}
+  .ev{padding:10px 13px;border-radius:14px;color:var(--on-brand);font-size:12px;font-weight:700;
+    margin-bottom:6px;background:var(--brand)}
+  .ev.soft{background:var(--brand-soft);color:var(--accent)}
+  .ev small{display:block;font-weight:500;opacity:.85;font-size:11px;margin-top:2px}
+
+  /* ===== פורטפוליו ===== */
+  .pf-tabs{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .pf-tab{font-size:12px;font-weight:700;padding:8px 15px;border-radius:30px;background:var(--surface);
+    border:1px solid var(--line);color:var(--text-soft);cursor:pointer}
+  .pf-tab.on{background:var(--brand);color:var(--on-brand);border-color:transparent}
+  .gallery{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .shot{border-radius:var(--radius);overflow:hidden;position:relative;height:150px;cursor:pointer}
+  .shot .ph{width:100%;height:100%}
+  .shot .cap{position:absolute;bottom:0;right:0;left:0;padding:18px 12px 10px;
+    background:linear-gradient(transparent,rgba(0,0,0,.6));color:#fff}
+  .shot .cap b{font-size:13px;font-weight:800;display:block}
+  .shot .cap span{font-size:11px;opacity:.9}
+  .shot.tall{height:200px}
+
+  /* ===== ניהול ===== */
+  .bars{display:flex;align-items:flex-end;gap:9px;height:120px;padding:14px 4px 0}
+  .bars .bar{flex:1;background:var(--brand);border-radius:8px 8px 4px 4px;position:relative;min-height:8px}
+  .bars .bar span{position:absolute;bottom:-20px;right:0;left:0;text-align:center;font-size:10px;
+    color:var(--text-soft);font-weight:700}
+  .inv{display:flex;align-items:center;gap:12px;padding:13px 14px;border-bottom:1px solid var(--line)}
+  .inv:last-child{border-bottom:none}
+  .inv .ic{width:40px;height:40px;border-radius:12px;background:var(--brand-soft);display:flex;
+    align-items:center;justify-content:center;font-size:18px}
+  .inv .info{flex:1}
+  .inv .info b{font-size:14px;font-weight:800;color:var(--text);display:block}
+  .inv .info span{font-size:11px;color:var(--text-soft)}
+  .bar-mini{height:6px;background:var(--surface-2);border-radius:6px;margin-top:6px;overflow:hidden}
+  .bar-mini i{display:block;height:100%;background:var(--accent);border-radius:6px}
+  .low{color:#e0467c !important;font-weight:800}
+
+  /* ===== התאמת סגנון ===== */
+  .faces{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:8px}
+  .face{padding:14px 6px;border-radius:18px;background:var(--surface);border:1.5px solid var(--line);
+    text-align:center;cursor:pointer;transition:.2s}
+  .face.on{border-color:var(--accent);background:var(--brand-soft)}
+  .face svg{width:38px;height:46px}
+  .face span{display:block;font-size:11px;font-weight:700;color:var(--text);margin-top:5px}
+  .reco{display:flex;gap:13px;padding:14px;margin-bottom:10px;align-items:center}
+  .reco .ph{width:62px;height:62px;border-radius:16px;flex-shrink:0}
+  .reco .info{flex:1}
+  .reco .info b{font-size:14px;font-weight:800;color:var(--text);display:block}
+  .reco .info p{font-size:12px;color:var(--text-soft);margin-top:3px;line-height:1.4}
+  .match{font-size:11px;font-weight:900;color:var(--accent);background:var(--brand-soft);
+    padding:5px 9px;border-radius:30px;white-space:nowrap}
+
+  .btn{display:block;width:100%;background:var(--brand);color:var(--on-brand);border:none;
+    padding:15px;border-radius:18px;font-family:var(--font);font-size:15px;font-weight:800;
+    cursor:pointer;margin-top:14px}
+
+  /* ניווט תחתון */
+  .nav{display:flex;justify-content:space-around;padding:12px 10px 16px;background:var(--surface);
+    border-top:1px solid var(--line)}
+  .nav button{background:none;border:none;display:flex;flex-direction:column;align-items:center;
+    gap:4px;cursor:pointer;color:var(--text-soft);font-family:var(--font);font-size:10px;
+    font-weight:700;flex:1;transition:.2s}
+  .nav button svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2;
+    stroke-linecap:round;stroke-linejoin:round}
+  .nav button.on{color:var(--accent)}
+  .fab{position:absolute;bottom:84px;left:22px;width:56px;height:56px;border-radius:50%;
+    background:var(--brand);color:var(--on-brand);border:none;font-size:28px;cursor:pointer;
+    box-shadow:var(--shadow);z-index:30;display:flex;align-items:center;justify-content:center}
+
+  .foot{margin-top:26px;font-size:12px;color:#8b909a;text-align:center;max-width:560px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>STUDIO ✂️ — אב טיפוס למעצבי שער</h1>
+  <p>אפליקציה לניהול תורים, פורטפוליו, העסק והתאמת סגנון ללקוח. נסו את 3 ערכות העיצוב והניווט למטה.</p>
+</div>
+
+<div class="themes">
+  <button class="theme-btn on" onclick="setTheme('clean',this)"><span class="swatch sw-clean"></span> מודרני ונקי</button>
+  <button class="theme-btn" onclick="setTheme('vivid',this)"><span class="swatch sw-vivid"></span> צבעוני ותוסס</button>
+  <button class="theme-btn" onclick="setTheme('luxe',this)"><span class="swatch sw-luxe"></span> יוקרתי</button>
+</div>
+
+<div class="phone" id="phone" data-theme="clean">
+  <div class="notch"></div>
+  <div class="screen">
+    <div class="statusbar"><span>9:41</span><span>5G ▪ 88%</span></div>
+
+    <div class="scroll">
+      <div class="topbar">
+        <div>
+          <div class="hi">בוקר טוב 👋</div>
+          <div class="name">מאיה כהן</div>
+        </div>
+        <div class="avatar">מ</div>
+      </div>
+
+      <!-- ===== בית ===== -->
+      <div class="page on" id="p-home">
+        <div class="hero">
+          <div class="deco"></div>
+          <h3>הכנסות היום</h3>
+          <div class="big">₪1,840</div>
+          <div class="mini"><span>● 6 תורים</span><span>● 2 חדשים</span><span>● 91% תפוסה</span></div>
+        </div>
+        <div class="sec-title">סטטיסטיקה מהירה</div>
+        <div class="stat-row">
+          <div class="card stat"><div class="v">142</div><div class="l">לקוחות פעילים</div><div class="chip">+12 החודש</div></div>
+          <div class="card stat"><div class="v">4.9★</div><div class="l">דירוג ממוצע</div><div class="chip">86 ביקורות</div></div>
+        </div>
+        <div class="sec-title">התורים הבאים <a onclick="go('cal')">לכל היומן ›</a></div>
+        <div class="card appt"><div class="time"><b>10:30</b><span>45 דק'</span></div><div class="ci">דנ</div><div class="info"><b>דנה לוי</b><span>צבע + פן ✦ לקוחה קבועה</span></div><div class="price">₪320</div></div>
+        <div class="card appt"><div class="time"><b>12:00</b><span>30 דק'</span></div><div class="ci">יע</div><div class="info"><b>יעל ברק</b><span>תספורת + עיצוב</span></div><div class="price">₪150</div></div>
+        <div class="card appt"><div class="time"><b>14:15</b><span>90 דק'</span></div><div class="ci">רו</div><div class="info"><b>רוני אדם</b><span>החלקה ✦ לקוח חדש</span></div><div class="price">₪580</div></div>
+      </div>
+
+      <!-- ===== יומן ===== -->
+      <div class="page" id="p-cal">
+        <div class="sec-title">יומן תורים — יוני</div>
+        <div class="week">
+          <div class="day"><span>א׳</span><b>14</b></div>
+          <div class="day"><span>ב׳</span><b>15</b></div>
+          <div class="day on"><span>ג׳</span><b>16</b></div>
+          <div class="day"><span>ד׳</span><b>17</b></div>
+          <div class="day"><span>ה׳</span><b>18</b></div>
+          <div class="day"><span>ו׳</span><b>19</b></div>
+          <div class="day"><span>ש׳</span><b>20</b></div>
+        </div>
+        <div class="timeline-row"><div class="t">10:00</div><div class="slot"><div class="ev">דנה לוי — צבע + פן<small>10:30–11:15 ✦ ₪320</small></div></div></div>
+        <div class="timeline-row"><div class="t">12:00</div><div class="slot"><div class="ev soft">יעל ברק — תספורת<small>12:00–12:30 ✦ ₪150</small></div></div></div>
+        <div class="timeline-row"><div class="t">13:00</div><div class="slot"><small style="color:var(--text-soft)">הפסקת צהריים</small></div></div>
+        <div class="timeline-row"><div class="t">14:00</div><div class="slot"><div class="ev">רוני אדם — החלקה<small>14:15–15:45 ✦ ₪580 ✦ לקוח חדש</small></div></div></div>
+        <div class="timeline-row"><div class="t">16:00</div><div class="slot"><div class="ev soft">נועה גל — גוונים<small>16:00–17:00 ✦ ₪410</small></div></div></div>
+        <button class="btn">+ קביעת תור חדש</button>
+      </div>
+
+      <!-- ===== פורטפוליו ===== -->
+      <div class="page" id="p-port">
+        <div class="sec-title">הפורטפוליו שלי</div>
+        <div class="pf-tabs">
+          <div class="pf-tab on">הכל</div>
+          <div class="pf-tab">צבע</div>
+          <div class="pf-tab">תספורות</div>
+          <div class="pf-tab">החלקות</div>
+          <div class="pf-tab">אירועים</div>
+        </div>
+        <div class="gallery">
+          <div class="shot tall"><div class="ph" style="background:linear-gradient(135deg,#f6a5c0,#a855f7)"></div><div class="cap"><b>באלייאז' חום-זהב</b><span>צבע ✦ 3 שעות</span></div></div>
+          <div class="shot"><div class="ph" style="background:linear-gradient(135deg,#fcb045,#fd1d1d)"></div><div class="cap"><b>קופי נחושת</b><span>צבע</span></div></div>
+          <div class="shot"><div class="ph" style="background:linear-gradient(135deg,#43cea2,#185a9d)"></div><div class="cap"><b>בוב קלאסי</b><span>תספורת</span></div></div>
+          <div class="shot tall"><div class="ph" style="background:linear-gradient(135deg,#30cfd0,#330867)"></div><div class="cap"><b>תסרוקת כלה</b><span>אירוע ✦ עם אקססוריז</span></div></div>
+          <div class="shot"><div class="ph" style="background:linear-gradient(135deg,#ee9ca7,#ffdde1)"></div><div class="cap"><b>בלונד פלטינה</b><span>צבע</span></div></div>
+          <div class="shot"><div class="ph" style="background:linear-gradient(135deg,#c79081,#dfa579)"></div><div class="cap"><b>גלים רכים</b><span>עיצוב</span></div></div>
+        </div>
+        <button class="btn">📷 העלאת עבודה חדשה</button>
+      </div>
+
+      <!-- ===== ניהול עסקי ===== -->
+      <div class="page" id="p-biz">
+        <div class="sec-title">ניהול העסק</div>
+        <div class="stat-row" style="margin-bottom:12px">
+          <div class="card stat"><div class="v">₪38.4K</div><div class="l">הכנסות החודש</div><div class="chip">+18% מהקודם</div></div>
+          <div class="card stat"><div class="v">₪9.2K</div><div class="l">הוצאות</div><div class="chip">מלאי + שכ"ד</div></div>
+        </div>
+        <div class="card" style="padding:14px 12px 30px">
+          <div class="sec-title" style="margin:4px 4px 0">הכנסות 6 חודשים</div>
+          <div class="bars">
+            <div class="bar" style="height:55%"><span>ינו'</span></div>
+            <div class="bar" style="height:68%"><span>פבר'</span></div>
+            <div class="bar" style="height:60%"><span>מרץ</span></div>
+            <div class="bar" style="height:82%"><span>אפר'</span></div>
+            <div class="bar" style="height:74%"><span>מאי</span></div>
+            <div class="bar" style="height:100%"><span>יוני</span></div>
+          </div>
+        </div>
+        <div class="sec-title">מלאי מוצרים <a>הזמנה ›</a></div>
+        <div class="card">
+          <div class="inv"><div class="ic">🧴</div><div class="info"><b>צבע 7.3 זהב</b><span>נשארו 12 יח'</span><div class="bar-mini"><i style="width:65%"></i></div></div></div>
+          <div class="inv"><div class="ic">🧪</div><div class="info"><b>מחמצן 9%</b><span class="low">נשארו 2 יח' — להזמין!</span><div class="bar-mini"><i style="width:12%"></i></div></div></div>
+          <div class="inv"><div class="ic">💆‍♀️</div><div class="info"><b>מסכת קרטין</b><span>נשארו 8 יח'</span><div class="bar-mini"><i style="width:45%"></i></div></div></div>
+        </div>
+      </div>
+
+      <!-- ===== התאמת סגנון ===== -->
+      <div class="page" id="p-style">
+        <div class="sec-title">התאמת סגנון ללקוח</div>
+        <p style="font-size:13px;color:var(--text-soft);margin:0 4px 14px;line-height:1.5">בחרו את מבנה הפנים והעדפת האורך — נציע תספורות וצבעים שמתאימים ביותר.</p>
+        <div style="font-size:12px;font-weight:800;color:var(--text);margin:0 4px 8px">מבנה פנים</div>
+        <div class="faces">
+          <div class="face on" onclick="pickFace(this)"><svg viewBox="0 0 40 50"><ellipse cx="20" cy="25" rx="14" ry="22" fill="none" stroke="var(--accent)" stroke-width="2.5"/></svg><span>אובלי</span></div>
+          <div class="face" onclick="pickFace(this)"><svg viewBox="0 0 40 50"><rect x="7" y="6" width="26" height="38" rx="6" fill="none" stroke="var(--text-soft)" stroke-width="2.5"/></svg><span>מרובע</span></div>
+          <div class="face" onclick="pickFace(this)"><svg viewBox="0 0 40 50"><circle cx="20" cy="25" r="17" fill="none" stroke="var(--text-soft)" stroke-width="2.5"/></svg><span>עגול</span></div>
+        </div>
+        <div class="sec-title">המלצות מותאמות ✦ פנים אובלי</div>
+        <div class="card reco"><div class="ph" style="background:linear-gradient(135deg,#43cea2,#185a9d)"></div><div class="info"><b>לוֹב באורך כתף</b><p>מחמיא לקו הלסת, מוסיף נפח בצדדים</p></div><div class="match">97%</div></div>
+        <div class="card reco"><div class="ph" style="background:linear-gradient(135deg,#fcb045,#fd1d1d)"></div><div class="info"><b>באלייאז' חמים</b><p>גוונים זהובים שמאירים את עוון העור</p></div><div class="match">93%</div></div>
+        <div class="card reco"><div class="ph" style="background:linear-gradient(135deg,#30cfd0,#330867)"></div><div class="info"><b>גלים עם פיתול רך</b><p>תנועה טבעית שמרככת את הפרופורציות</p></div><div class="match">88%</div></div>
+        <button class="btn">💬 שליחת ההמלצות ללקוחה</button>
+      </div>
+
+    </div>
+
+    <button class="fab" onclick="go('cal')">+</button>
+
+    <!-- ניווט -->
+    <div class="nav">
+      <button class="on" data-p="home" onclick="go('home',this)">
+        <svg viewBox="0 0 24 24"><path d="M3 10l9-7 9 7v9a2 2 0 0 1-2 2h-4v-6h-6v6H5a2 2 0 0 1-2-2z"/></svg>בית</button>
+      <button data-p="cal" onclick="go('cal',this)">
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="3"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>יומן</button>
+      <button data-p="port" onclick="go('port',this)">
+        <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>פורטפוליו</button>
+      <button data-p="biz" onclick="go('biz',this)">
+        <svg viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="M7 14l4-4 3 3 5-6"/></svg>העסק</button>
+      <button data-p="style" onclick="go('style',this)">
+        <svg viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 3 2 4 2 7a3 3 0 0 0 6 0c0-1 1-2 2.5-2.5"/><circle cx="17" cy="14" r="3"/></svg>סגנון</button>
+    </div>
+  </div>
+</div>
+
+<div class="foot">אב טיפוס אינטראקטיבי — לחיצה על הניווט התחתון מחליפה מסכים, והכפתורים למעלה מחליפים ערכת עיצוב.<br>הנתונים לדוגמה בלבד.</div>
+
+<script>
+  function setTheme(t,btn){
+    document.getElementById('phone').setAttribute('data-theme',t);
+    document.querySelectorAll('.theme-btn').forEach(b=>b.classList.remove('on'));
+    btn.classList.add('on');
+  }
+  function go(p,btn){
+    document.querySelectorAll('.page').forEach(el=>el.classList.remove('on'));
+    document.getElementById('p-'+p).classList.add('on');
+    document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('on'));
+    if(btn) btn.classList.add('on');
+    else document.querySelector('.nav button[data-p="'+p+'"]').classList.add('on');
+    document.querySelector('.scroll').scrollTop=0;
+  }
+  function pickFace(el){
+    document.querySelectorAll('.face').forEach(f=>f.classList.remove('on'));
+    el.classList.add('on');
+  }
+</script>
+</body>
+</html>
